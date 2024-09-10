@@ -1,0 +1,187 @@
+import { DataSource, Repository } from 'typeorm';
+import { ProductDTO } from './dto/create-product.dto';
+import {
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
+import { User } from 'src/auth/user.entity';
+import { Product } from './product.entity';
+import { TransactionService } from '../transaction/transaction.service';
+
+@Injectable()
+export class ProductsRepository extends Repository<Product> {
+  constructor(
+    private dataSource: DataSource,
+    private transactionService: TransactionService,
+  ) {
+    super(Product, dataSource.createEntityManager());
+  }
+
+  // Using transactions in the createProduct method
+  async createProduct(productDTO: ProductDTO, user: User): Promise<Product> {
+    return await this.transactionService.executeInTransaction(
+      async (manager) => {
+        const { name, description, price, categoryId } = productDTO;
+
+        const product = manager.create(Product, {
+          name,
+          description,
+          price,
+          categoryId,
+          user,
+        });
+
+<<<<<<< HEAD
+        try {
+          await manager.save(product);
+          return product;
+        } catch (error) {
+          throw new InternalServerErrorException('Error creating product');
+        }
+      },
+    );
+=======
+      try {
+        await manager.save(product);
+        return product;
+      } catch (error) {
+        throw new InternalServerErrorException(
+          'Error creating product(Repository)',
+        );
+      }
+    });
+>>>>>>> 0496c74566ae6d2e5aa23edbbd9e969bf4225761
+  }
+
+  // Using transactions in the getProducts method
+  async getProductsByUser(user: User): Promise<Product[]> {
+    return await this.transactionService.executeInTransaction(
+      async (manager) => {
+        try {
+          // Create a query builder for Product entity
+          const query = manager.createQueryBuilder(Product, 'product');
+          query.where('product.userId = :userId', { userId: user.id }); // Assuming you filter products by user
+
+          // Execute the query and fetch products
+          const products = await query.getMany();
+          return products;
+        } catch (error) {
+          throw new InternalServerErrorException('Error retrieving products');
+        }
+      },
+    );
+  }
+
+  async getProductsByCategoryId(
+    user: User,
+    categoryId: string,
+  ): Promise<Product[]> {
+<<<<<<< HEAD
+    return await this.transactionService.executeInTransaction(
+      async (manager) => {
+        try {
+          // Create a query builder for Product entity
+          const query = manager.createQueryBuilder(Product, 'product');
+          query.where('product.userId = :userId', { userId: user.id }); // Assuming you filter products by user
+          query.andWhere('product.categoryId = :categoryId', { categoryId });
+
+          // Execute the query and fetch products
+          const products = await query.getMany();
+          return products;
+        } catch (error) {
+          throw new InternalServerErrorException(
+            'Error retrieving products by category',
+          );
+        }
+      },
+    );
+  }
+
+  async getAllProducts(): Promise<Product[]> {
+    return await this.transactionService.executeInTransaction(
+      async (manager) => {
+        try {
+          // Fetch all products
+          const products = await manager.find(Product);
+          return products;
+        } catch (error) {
+          throw new InternalServerErrorException('Error retrieving products');
+        }
+      },
+    );
+=======
+    const { search } = filterDto;
+    const query = this.dataSource.createQueryBuilder(Product, 'product');
+    query.where({ user });
+
+    if (categoryId) {
+      query.andWhere('product.categoryId = :categoryId', { categoryId });
+    }
+
+    if (search) {
+      query.andWhere(
+        '(LOWER(product.name) LIKE LOWER(:search) OR LOWER(product.description) LIKE LOWER(:search))',
+        { search: `%${search}%` },
+      );
+    }
+
+    try {
+      const products = await query.getMany();
+      return products;
+    } catch (error) {
+      throw new InternalServerErrorException(
+        'Error retrieving products (Repository)',
+      );
+    }
+>>>>>>> 0496c74566ae6d2e5aa23edbbd9e969bf4225761
+  }
+
+  // Using transactions in the updateProduct method
+  async updateProduct(
+    id: string,
+    productDTO: ProductDTO,
+    user: User,
+  ): Promise<Product> {
+    return await this.transactionService.executeInTransaction(
+      async (manager) => {
+        const product = await manager.findOne(Product, { where: { id, user } });
+
+<<<<<<< HEAD
+        if (!product) {
+          throw new NotFoundException('Product not found');
+        }
+=======
+      if (!product) {
+        throw new NotFoundException('Product not found (Repository)');
+      }
+>>>>>>> 0496c74566ae6d2e5aa23edbbd9e969bf4225761
+
+        const { name, description, price, categoryId } = productDTO;
+        product.name = name;
+        product.description = description;
+        product.price = price;
+        product.categoryId = categoryId;
+
+<<<<<<< HEAD
+        try {
+          await manager.save(product);
+          return product;
+        } catch (error) {
+          throw new InternalServerErrorException('Error updating product');
+        }
+      },
+    );
+=======
+      try {
+        await manager.save(product);
+        return product;
+      } catch (error) {
+        throw new InternalServerErrorException(
+          'Error updating product (Repository)',
+        );
+      }
+    });
+>>>>>>> 0496c74566ae6d2e5aa23edbbd9e969bf4225761
+  }
+}
